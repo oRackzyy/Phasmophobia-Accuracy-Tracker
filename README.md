@@ -9,7 +9,7 @@ Built using HTML, CSS, and JavaScript, this app features an atmospheric interfac
 <img width="844" height="785" alt="image" src="https://github.com/user-attachments/assets/922bc0e3-83c9-4966-a4ff-a9a1fc08bf7c" />
 
 
-**[Try the Ghost Identification Log!](https://oRackzyy.github.io/phasmophobia-ghost-tracker/)**
+**[Try the Ghost Identification Log!](https://orackzyy.github.io/Phasmophobia-Accuracy-Tracker/)**
 
 ## **Features**
 

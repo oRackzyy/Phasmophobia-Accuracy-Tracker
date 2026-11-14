@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a1112">
+  <title>Ghost Identification Log</title>
+  <style>
+    :root {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color-scheme: dark;
+      --ink:#dce4dc;
+      --muted:#9daea6;
+      --line:#42534c;
+      --correct:#638f79;
+      --wrong:#a15b5b;
+    }
+    * { box-sizing:border-box; }
+    body {
+      min-height:100vh; margin:0; padding:8px;
+      display:grid; place-items:center; overflow-x:hidden;
+      color:var(--ink);
+      background: radial-gradient(ellipse at 50% 12%, #25312d 0%, #111a19 43%, #060a0b 100%);
+    }
+    body::before {
+      content:""; position:fixed; inset:0; pointer-events:none;
+      background: repeating-linear-gradient(0deg, transparent 0 3px, #0001 4px 5px);
+      opacity:.35;
+    }
+    body::after {
+      content:""; position:fixed; inset:-20%; pointer-events:none;
+      background: radial-gradient(ellipse at 75% 70%, #b9c4af0c, transparent 38%), radial-gradient(ellipse at 15% 20%, #9bc3a90c, transparent 40%);
+      filter:blur(25px); animation:mist 14s ease-in-out infinite alternate;
+    }
+    @keyframes mist { to { transform:translate(3%, -2%) scale(1.05); } }
+    main {
+      position:relative; z-index:1; width:min(100%, 510px); padding:16px 24px;
+      border:1px solid #536258; border-radius:4px;
+      background:linear-gradient(155deg, #202b28f5, #131c1af7 70%);
+      box-shadow:0 24px 80px #000b, inset 0 0 0 1px #0d1415, 0 0 65px #92b29d12;
+    }
+    .topline { display:flex; justify-content:space-between; gap:12px; align-items:center; color:#a0b1a6; text-transform:uppercase; letter-spacing:.21em; font-size:.6rem; }
+    .indicator { display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
+    .indicator::before {content: ""; width: 7px; height: 7px; border-radius: 50%; background: #b27767; box-shadow: 0 0 9px #b27767a3; animation: ghostPulse 2s ease-in-out infinite; }
+    @keyframes ghostPulse {0%, 100% {opacity: 1; box-shadow: 0 0 5px #b27767; } 50% {opacity: 0.3; box-shadow: 0 0 17px #b27767; }}    
+    .sigil { text-align:center; color:#a5bbb0; font-family:Georgia,serif; font-size:1.4rem; margin:8px auto 4px; text-shadow:0 0 17px #a3c6b166; }
+    h1 { margin:0; text-align:center; text-transform:uppercase; letter-spacing:.07em; font-family:Georgia,'Times New Roman',serif; font-weight:400; font-size:1.3rem; line-height: 1.3; }
+    .subtitle { text-align:center; color:var(--muted); letter-spacing:.15em; text-transform:uppercase; font-size:.66rem; margin:8px 0 15px; }
+    .rule { height:1px; background:linear-gradient(90deg, transparent, #768779, transparent); margin-bottom:15px; }
+    .stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .stat { text-align:center; padding:12px 10px; background:#0d1716a8; border:1px solid #36463d; transition:border-color 0.2s ease, box-shadow 0.2s ease; }
+    .stat:hover {border-color: #638f79; box-shadow: 0 0 15px #638f7925; }
+    .stat-label { color:#adbcb3; font-size:.69rem; text-transform:uppercase; letter-spacing:.13em; }
+    .stat-value { margin-top:6px; font-family:Georgia,serif; font-size:2.6rem; font-variant-numeric:tabular-nums; }
+    #correct { color:#add4b6; text-shadow:0 0 20px #77a88d40; }
+    .accuracy { text-align:center; margin: 10px 0; }
+    #percentage { font:380 3.0rem Georgia,serif; font-variant-numeric:tabular-nums; text-shadow:0 0 25px #dce4dc1b; }
+    .subtext { color:var(--muted); font-size:.73rem; text-transform:uppercase; letter-spacing:.13em; }
+    .emf-container {margin-top: 8px; padding: 7px; background: #0b1412; border: 1px solid #405348; border-radius: 3px; }
+    .emf-header {display: flex; justify-content: space-between; margin-bottom: 10px; font-family: Consolas, monospace; font-size: 0.7rem; letter-spacing: 0.12em; color: #a4b9a9; }
+    .emf-bars {display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .emf-bar {height: 13px; background: #26342d; border: 1px solid #405348; opacity: 0.35; transition: opacity 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; }
+    .emf-bar:nth-child(1).active {background: #6bbd79; box-shadow: 0 0 10px #6bbd7977; }
+    .emf-bar:nth-child(2).active {background: #9ccd60; box-shadow: 0 0 10px #9ccd6077; }
+    .emf-bar:nth-child(3).active {background: #d4c85a; box-shadow: 0 0 10px #d4c85a77; }
+    .emf-bar:nth-child(4).active {background: #e49b4f; box-shadow: 0 0 10px #e49b4f77; }
+    .emf-bar:nth-child(5).active {background: #cc4e4e; box-shadow: 0 0 12px #cc4e4e99; }
+    .emf-bar.active {opacity: 1; }
+    .streak-strip {display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid #2c3e34; margin-top: 10px; padding-top: 9px; }
+    .streak-item {display: flex; justify-content: center; align-items: baseline; gap: 9px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #9eafa4; }
+    .streak-item strong {font: 600 1.03rem Georgia, serif; color: #add4b6; }
+    #best-streak {color: #d7c79f; }
+    .actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top: 18px; }
+    button { cursor:pointer; font:600 .78rem 'Segoe UI',sans-serif; text-transform:uppercase; letter-spacing:.07em; color:#f4f4ef; border-radius:2px; padding:9px 6px; transition:background .15s,border-color .15s,transform .1s; }
+    button:active { transform:translateY(1px); }
+    button:focus-visible { outline:2px solid #ecf3de; outline-offset:3px; }
+    #right { background:#315a45; border:1px solid #6a9c7c; }
+    #wrong { background:#632f34; border:1px solid #a65e64; }
+    #right:hover { background:#406e54; }
+    #wrong:hover { background:#793c42; }
+    footer { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:8px; }
+    #incorrect { letter-spacing:.02em; text-transform:none; }
+    .minor-actions { display:flex; gap:8px; }
+    .minor-actions button { background:transparent; border:1px solid #5b6c60; color:#b6c5b8; padding:9px 12px; font-size:.68rem; }
+    .minor-actions button:hover:not(:disabled) { background:#26352e; }
+    button:disabled { opacity:.35; cursor:not-allowed; }
+    @media (max-width:420px) { main { padding:24px 18px; } .actions {gap:8px;} button {font-size:.71rem;} footer {align-items:flex-start; flex-direction:column;} .minor-actions {align-self:flex-end;} }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after {animation:none !important;transition:none !important;} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topline"><span>Investigation Archive // 001</span><span class="indicator">Active Case</span></div>
+    <div class="sigil" aria-hidden="true">◇</div>
+    <h1>Ghost Identification Log</h1>
+    <p class="subtitle">Team Performance</p>
+    <div class="rule" aria-hidden="true"></div>
+
+    <section class="stats" aria-label="Ghost identification counts">
+      <div class="stat"><div class="stat-label">Ghosts Identified</div><div class="stat-value" id="correct">0</div></div>
+      <div class="stat"><div class="stat-label">Investigations</div><div class="stat-value" id="total">0</div></div>
+    </section>
+
+    <section class="accuracy" aria-label="Team identification accuracy">
+      <div id="percentage">0.0%</div>
+      <div class="subtext">Identification Accuracy</div>
+      <div class="emf-container"
+        id="meter"
+        role="progressbar"
+        aria-label="Identification accuracy"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0">
+
+        <div class="emf-header">
+          <span>EMF // ACCURACY</span>
+          <span>LEVEL <span id="emf-level">0</span></span>
+        </div>
+
+        <div class="emf-bars">
+         <div class="emf-bar"></div>
+          <div class="emf-bar"></div>
+          <div class="emf-bar"></div>
+          <div class="emf-bar"></div>
+          <div class="emf-bar"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="streak-strip">
+      <div class="streak-item">
+        <span>Current Streak</span>
+        <strong id="current-streak">0</strong>
+      </div>
+
+      <div class="streak-item">
+        <span>Best Streak</span>
+        <strong id="best-streak">0</strong>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="right">✓ Identified</button>
+      <button type="button" id="wrong">✕ Misidentified</button>
+    </div>
+    <footer>
+      <span class="subtext" id="incorrect">0 ghosts misidentified</span>
+      <div class="minor-actions">
+        <button type="button" id="undo" disabled>↶ Undo</button>
+        <button type="button" id="reset">↻ Reset</button>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    const storageKey = 'phasmophobia-ghost-tracker-v1';
+    let correct = 0;
+    let total = 0;
+    let history = [];
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey));
+      if (saved && Number.isSafeInteger(saved.correct) && Number.isSafeInteger(saved.total)
+          && saved.correct >= 0 && saved.total >= saved.correct) {
+        correct = saved.correct;
+        total = saved.total;
+        if (Array.isArray(saved.history)) {
+          history = saved.history.filter(x => x === 'right' || x === 'wrong');
+          // History is only used for undo and needn't include past sessions before it was implemented.
+        }
+      }
+    } catch (_) { /* Tracker remains usable if local storage is unavailable. */ }
+
+    function calculateStreaks() {
+      let currentStreak = 0;
+      let bestStreak = 0;
+      for (const result of history) {
+        if (result === 'right') {
+            currentStreak++;
+        } else {
+            currentStreak = 0;
+        }
+          
+        bestStreak = Math.max(bestStreak, currentStreak);
+      }
+
+      return { currentStreak, bestStreak };
+    }
+
+    function update() {
+      const percentage = total ? (correct / total) * 100 : 0;
+      document.getElementById('correct').textContent = correct;
+      document.getElementById('total').textContent = total;
+      document.getElementById('incorrect').textContent = `${total - correct} ghosts misidentified`;
+      document.getElementById('percentage').textContent = `${percentage.toFixed(1)}%`;
+      const emfLevel = Math.ceil(percentage / 20);      
+      document.getElementById('emf-level').textContent = emfLevel;
+      const emfBars = document.querySelectorAll('.emf-bar');
+      emfBars.forEach((bar, index) => {
+        if (index < emfLevel) {
+          bar.classList.add('active');
+        } else {
+          bar.classList.remove('active');
+        }});
+      const { currentStreak, bestStreak } = calculateStreaks();
+      document.getElementById('current-streak').textContent = currentStreak;
+      document.getElementById('best-streak').textContent = bestStreak;
+      document.getElementById('meter').setAttribute('aria-valuenow', percentage.toFixed(1));
+      document.getElementById('undo').disabled = history.length === 0;
+      try { localStorage.setItem(storageKey, JSON.stringify({ correct, total, history })); } catch (_) {}
+    }
+
+    document.getElementById('right').addEventListener('click', () => {
+      if (total >= Number.MAX_SAFE_INTEGER || correct >= Number.MAX_SAFE_INTEGER) return;
+      correct++;
+      total++;
+      history.push('right');
+      update();
+    });
+    document.getElementById('wrong').addEventListener('click', () => {
+      if (total >= Number.MAX_SAFE_INTEGER) return;
+      total++;
+      history.push('wrong');
+      update();
+    });
+    document.getElementById('undo').addEventListener('click', () => {
+      if (!history.length) return;
+      const last = history.pop();
+      total--;
+      if (last === 'right') correct--;
+      update();
+    });
+    document.getElementById('reset').addEventListener('click', () => {
+      if (total === 0 || confirm('Erase your investigation log and reset all counts?')) {
+        correct = 0;
+        total = 0;
+        history = [];
+        update();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.target instanceof HTMLElement && (event.target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName))) {
+        return;
+      }
+  
+      if (event.repeat) {
+        return;
+      }
+
+      if (event.ctrlKey && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        document.getElementById('undo').click();
+        return;
+      }
+
+       if (event.ctrlKey && event.key.toLowerCase() === 'r') {
+        event.preventDefault();
+        document.getElementById('reset').click();
+        return;
+      }
+
+      if (event.ctrlKey || event.altKey || event.metaKey) {
+        return;
+      }
+
+      if (event.key === '1') {
+        document.getElementById('right').click();
+      }
+
+      else if (event.key === '2') {
+        document.getElementById('wrong').click();
+      }});
+
+    update();
+  </script>
+</body>
+</html>
